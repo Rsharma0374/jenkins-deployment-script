@@ -70,7 +70,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     kubectl get pods
 
     echo "=== Port Forwarding ==="
-    kubectl port-forward service/eureka-service 8761:8761
+    nohup kubectl port-forward service/eureka-service 8761:8761 >/dev/null 2>&1 &
 
 EOF
 
