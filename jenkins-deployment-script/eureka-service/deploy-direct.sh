@@ -28,18 +28,23 @@ mvn clean install
 
 echo "Create deployment directory if not exists"
 sudo mkdir -p /opt/deployment
+sudo mkdir -p /opt/deployment/eureka-service
+
 
 echo "Copy jar file to deployment directory"
-sudo cp target/service-registry-0.0.1-SNAPSHOT.jar /opt/deployment/
+sudo cp target/service-registry-0.0.1-SNAPSHOT.jar /opt/deployment/eureka-service/
 
 echo "Change directory to deployment location"
-cd /opt/deployment
+cd /opt/deployment/
+sudo chown jenkins:jenkins deployment/
+sudo chown jenkins:jenkins deployment/*
+cd eureka-service
 
 echo "kill existing process"
 sudo pkill -f "service-registry-0.0.1-SNAPSHOT.jar"
 
 echo "start the jar with nohup"
-nohup java -jar service-registry-0.0.1-SNAPSHOT.jar > /opt/deployment/eurekaServer.log 2>&1 &
+nohup java -jar service-registry-0.0.1-SNAPSHOT.jar > /opt/deployment/eureka-service/eurekaServer.log 2>&1 &
 
 echo "restart the nginx"
 sudo systemctl restart nginx
