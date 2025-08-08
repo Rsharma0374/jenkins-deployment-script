@@ -72,6 +72,8 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     echo "=== Port Forwarding ==="
     nohup kubectl port-forward service/eureka-service 8761:8761 >/dev/null 2>&1 &
 
+    echo "=== Restarting Nginx ==="
+    sudo systemctl restart nginx
 EOF
 
 echo "=== Deployment Completed Successfully ==="
