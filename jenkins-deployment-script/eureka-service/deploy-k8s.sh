@@ -51,6 +51,14 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     echo "=== Building Docker image ==="
     docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
 
+    docker tag $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG rsharma0374/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+
+    echo "=== Logging in to Docker Hub ==="
+    docker login
+
+    echo "=== Pushing Docker image to Docker Hub ==="
+    docker push rsharma0374/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+
     echo "=== Applying Kubernetes manifests ==="
     kubectl apply -f eureka-deployment.yaml
     kubectl apply -f eureka-service.yaml
