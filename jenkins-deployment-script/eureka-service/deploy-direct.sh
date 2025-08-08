@@ -35,10 +35,10 @@ echo "Copy jar file to deployment directory"
 sudo cp target/service-registry-0.0.1-SNAPSHOT.jar /opt/deployment/eureka-service/
 
 echo "Change directory to deployment location"
-cd /opt/deployment/
+cd /opt/
 sudo chown jenkins:jenkins deployment/
 sudo chown jenkins:jenkins deployment/*
-cd eureka-service
+cd deployment/eureka-service
 
 echo "kill existing process"
 sudo pkill -f "service-registry-0.0.1-SNAPSHOT.jar"
