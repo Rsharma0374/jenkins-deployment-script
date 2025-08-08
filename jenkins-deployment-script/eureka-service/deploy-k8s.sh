@@ -68,6 +68,10 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
 
     echo "=== Current pod status ==="
     kubectl get pods
+
+    echo "=== Port Forwarding ==="
+    kubectl port-forward service/eureka-service 8761:8761
+
 EOF
 
 echo "=== Deployment Completed Successfully ==="
