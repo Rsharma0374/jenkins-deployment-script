@@ -9,6 +9,7 @@ SERVER_IP="129.154.238.85"
 REPO_NAME="euruka-service-registry"
 DOCKER_IMAGE_NAME="eureka-service"
 DOCKER_IMAGE_TAG="latest"
+INGRESS_REPO_NAME="jenkins-deployment-script"
 
 # Run everything on the remote Kubernetes server
 sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
@@ -62,6 +63,24 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     echo "=== Applying Kubernetes manifests ==="
     kubectl apply -f eureka-deployment.yaml
     kubectl apply -f eureka-service.yaml
+
+
+
+    echo "=== Applying Ingress ==="
+    cd /home/ubuntu/deployment/repo/core
+
+    if [ -d "$INGRESS_REPO_NAME" ]; then
+        cd $INGRESS_REPO_NAME
+        git reset --hard
+        git checkout main
+        git pull origin main
+    else
+        git clone git@github.com:Rsharma0374/jenkins-deployment-script.git
+        cd $INGRESS_REPO_NAME
+        git checkout main
+    fi
+    cd jenkins-deployment-script/ingress
+    kubectl apply -f ingress.yaml
 
     echo "=== Waiting for deployment rollout ==="
     kubectl rollout status deployment/$DOCKER_IMAGE_NAME
