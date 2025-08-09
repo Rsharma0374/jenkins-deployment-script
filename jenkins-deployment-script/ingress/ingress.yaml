@@ -3,8 +3,7 @@ kind: Ingress
 metadata:
   name: eureka-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header X-Forwarded-Prefix /eureka;
 spec:
@@ -12,13 +11,13 @@ spec:
   - host: eureka.guardianservices.in
     http:
       paths:
-      - path: /
+      - path: /eureka(/|$)(.*)
         pathType: Prefix
         backend:
           service:
             name: eureka-service
             port:
-              number: 80
+              number: 8761
   # - host: auth.guardianservices.in
   #   http:
   #     paths:
