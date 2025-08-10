@@ -100,6 +100,17 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
 
     echo "=== Port forwarding ==="
     nohup kubectl port-forward service/email-connector-service 10002:10002 > /dev/null 2>&1 &
+    
+    # Wait a moment for port-forward to establish
+    sleep 3
+    
+    # Check if port-forward is working
+    if netstat -tlnp 2>/dev/null | grep -q ":10002"; then
+        echo "✅ Port forwarding successful - service accessible on port 10002"
+    else
+        echo "❌ Port forwarding failed - port 10002 not accessible"
+        exit 1
+    fi
 
     echo "=== Restarting Nginx ==="
     sudo systemctl restart nginx
