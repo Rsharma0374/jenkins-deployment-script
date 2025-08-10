@@ -19,7 +19,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     cd /home/ubuntu/deployment/repo/core
 
     echo "=== Killing old port forwarding ==="
-    PIDS=$(ps aux | grep "kubectl port-forward service/email-connector-service" | grep -v grep | awk '{print $2}')
+    PIDS=$(pgrep -f "kubectl port-forward service/email-connector-service")
     if [ -n "$PIDS" ]; then
         echo "Found PIDs: $PIDS"
         kill $PIDS
@@ -70,9 +70,19 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     docker push rsharma0374/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
 
     echo "=== Applying Kubernetes manifests ==="
+    
+    # Create or update the secret (idempotent)
+    if kubectl get secret infisical-secret -n default >/dev/null 2>&1; then
+        echo "Updating existing infisical-secret..."
+        kubectl delete secret infisical-secret -n default
+    fi
     kubectl create secret generic infisical-secret --from-file=infisical.properties=/opt/configs/infisical.properties -n default
+    echo "✅ Secret created/updated successfully"
+    
+    # Apply deployment and service
     kubectl apply -f email-connector-deployment.yaml
     kubectl apply -f email-connector-service.yaml
+    echo "✅ Kubernetes manifests applied successfully"
 
 
 
