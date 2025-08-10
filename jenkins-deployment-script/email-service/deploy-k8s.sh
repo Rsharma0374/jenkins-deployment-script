@@ -4,6 +4,7 @@ set -e  # Exit on any error
 echo "=== Starting Email Connector Service Kubernetes Deployment ==="
 
 PASSWORD=$1  # First argument passed to the script
+BRANCH=$2
 SERVER_IP="161.118.166.22"
 REPO_NAME="emailConnecter-core"
 DOCKER_IMAGE_NAME="email-connector-service"
@@ -25,7 +26,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     else
         echo "No existing port-forward process found for email-connector-service."
     fi
-    
+
     echo "=== Cleaning up old Kubernetes resources ==="
     if kubectl get deployment $DOCKER_IMAGE_NAME >/dev/null 2>&1; then
         echo "Deleting existing deployment..."
@@ -49,12 +50,12 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     if [ -d "$REPO_NAME" ]; then
         cd $REPO_NAME
         git reset --hard
-        git checkout main
-        git pull origin main
+        git checkout $BRANCH
+        git pull origin $BRANCH
     else
         git clone git@github.com:Rsharma0374/emailConnecter-core.git
         cd $REPO_NAME
-        git checkout main
+        git checkout $BRANCH
     fi
 
     echo "=== Building Docker image ==="
