@@ -18,8 +18,14 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     cd /home/ubuntu/deployment/repo/core
 
     echo "=== Killing old port forwarding ==="
-    kill $(ps aux | grep "kubectl port-forward service/email-connector-service" | grep -v grep | awk '{print $2}')
-
+    PIDS=$(ps aux | grep "kubectl port-forward service/email-connector-service" | grep -v grep | awk '{print $2}')
+    if [ -n "$PIDS" ]; then
+        echo "Found PIDs: $PIDS"
+        kill $PIDS
+    else
+        echo "No existing port-forward process found for email-connector-service."
+    fi
+    
     echo "=== Cleaning up old Kubernetes resources ==="
     if kubectl get deployment $DOCKER_IMAGE_NAME >/dev/null 2>&1; then
         echo "Deleting existing deployment..."
