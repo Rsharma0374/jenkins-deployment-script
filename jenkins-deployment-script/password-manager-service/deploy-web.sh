@@ -6,7 +6,7 @@ echo "=== Starting Document Utility Web Service ==="
 PASSWORD=$1  # First argument passed to the script
 BRANCH=$2
 SERVER_IP="80.225.213.153"
-REPO_NAME="document-utility-web"
+REPO_NAME="password-manager-web"
 
 # Run everything on the remote Kubernetes server
 sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP <<EOF
@@ -21,7 +21,7 @@ if [ -d "$REPO_NAME" ]; then
     sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
     sudo -u jenkins git -C $REPO_NAME pull origin $BRANCH
 else
-    sudo -u jenkins git clone git@github.com:Rsharma0374/document-utility-web.git $REPO_NAME
+    sudo -u jenkins git clone git@github.com:Rsharma0374/password-manager-web $REPO_NAME
     sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
 fi
 
