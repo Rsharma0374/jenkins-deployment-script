@@ -9,30 +9,27 @@ SERVER_IP="80.225.213.153"
 REPO_NAME="document-utility-web"
 
 # Run everything on the remote Kubernetes server
-sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
-sudo su - jenkins << 'EOF'
-    set -e
-    echo "=== Connected to Kubernetes Server ($SERVER_IP) ==="
+sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP <<EOF
+set -e
+echo "=== Connected to Kubernetes Server ($SERVER_IP) ==="
 
-    cd /var/lib/jenkins/repository/web
+cd /var/lib/jenkins/repository/web
 
-    echo "=== Cloning or updating repository ==="
-    if [ -d "$REPO_NAME" ]; then
-        cd $REPO_NAME
-        git reset --hard
-        git checkout $BRANCH
-        git pull origin $BRANCH
-    else
-        git clone git@github.com:Rsharma0374/document-utility-web.git
-        cd $REPO_NAME
-        git checkout $BRANCH
-    fi
+echo "=== Cloning or updating repository ==="
+if [ -d "$REPO_NAME" ]; then
+    sudo -u jenkins git -C $REPO_NAME reset --hard
+    sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
+    sudo -u jenkins git -C $REPO_NAME pull origin $BRANCH
+else
+    sudo -u jenkins git clone git@github.com:Rsharma0374/document-utility-web.git $REPO_NAME
+    sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
+fi
 
 echo "Install the dependencies"
-npm install
+sudo -u jenkins npm install --prefix $REPO_NAME
 
 echo "Build the project"
-npm run build
+sudo -u jenkins npm run build --prefix $REPO_NAME
 
 echo "Restart the nginx"
 sudo systemctl restart nginx
