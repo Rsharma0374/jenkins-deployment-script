@@ -5,7 +5,7 @@ echo "=== Starting Document Utility Web Service ==="
 
 PASSWORD=$1  # First argument passed to the script
 BRANCH=$2
-SERVER_IP="80.225.213.153"
+SERVER_IP="80.225.218.113"
 REPO_NAME="password-manager-web"
 
 # Run everything on the remote Kubernetes server
