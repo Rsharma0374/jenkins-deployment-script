@@ -5,7 +5,7 @@ echo "=== Starting API Gateway Service Kubernetes Deployment ==="
 
 PASSWORD=$1  # First argument passed to the script
 BRANCH=$2
-SERVER_IP="161.118.166.22"
+SERVER_IP="80.225.218.113"
 REPO_NAME="API-Gateway"
 DOCKER_IMAGE_NAME="api-gateway-service"
 DOCKER_IMAGE_TAG="latest"
