@@ -5,7 +5,7 @@ echo "=== Starting Document Utility Service Kubernetes Deployment ==="
 
 PASSWORD=$1  # First argument passed to the script
 BRANCH=$2
-SERVER_IP="161.118.166.22"
+SERVER_IP="80.225.218.113"
 REPO_NAME="userAuthentication"
 DOCKER_IMAGE_NAME="auth-service"
 DOCKER_IMAGE_TAG="latest"
