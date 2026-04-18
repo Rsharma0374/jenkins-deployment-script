@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e  # Exit on any error
 
-echo "=== Starting Document Utility Web Service ==="
+echo "=== Starting Portfolio Web Service ==="
 
 PASSWORD=$1  # First argument passed to the script
 BRANCH=$2
