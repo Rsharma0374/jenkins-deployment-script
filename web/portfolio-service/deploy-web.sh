@@ -13,7 +13,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP <<EOF
 set -e
 echo "=== Connected to Web Server ($SERVER_IP) ==="
 
-cd /var/lib/jenkins/repository/web
+cd /home/ubuntu/deployment/repo/web
 
 echo "=== Cloning or updating repository ==="
 if [ -d "$REPO_NAME" ]; then
