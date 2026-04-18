@@ -21,7 +21,7 @@ if [ -d "$REPO_NAME" ]; then
     git -C $REPO_NAME checkout $BRANCH
     git -C $REPO_NAME pull origin $BRANCH
 else
-    git clone git@github.com:Rsharma0374/document-utility-web.git $REPO_NAME
+    git clone git@github.com:Rsharma0374/document-utility-web.git
     git -C $REPO_NAME checkout $BRANCH
 fi
 
