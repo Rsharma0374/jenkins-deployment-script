@@ -9,7 +9,7 @@ BRANCH=$2
 SERVER_IP="80.225.218.113"
 REPO_NAME="emailConnecter-core"
 APP_NAME="email-connector-service"
-APP_PORT="10002"
+APP_PORT="11002"   # ✅ FIXED (internal port)
 JAR_PATH="target/*.jar"
 LOG_DIR="/var/log/email-connector-service"
 LOG_FILE="$LOG_DIR/email-service.log"
@@ -22,7 +22,7 @@ fi
 sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     set -e
 
-    echo "=== Connected to EC2 Server ($SERVER_IP) ==="
+    echo "=== Connected to Server ($SERVER_IP) ==="
 
     cd /home/ubuntu/deployment/repo/core
 
@@ -46,22 +46,23 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     sudo touch $LOG_FILE
     sudo chown ubuntu:ubuntu $LOG_DIR $LOG_FILE
 
-    echo "=== Stopping Existing Application (if running) ==="
+    echo "=== Stopping Existing Application (NOT NGINX) ==="
     PID=\$(lsof -t -i:$APP_PORT || true)
     if [ ! -z "\$PID" ]; then
-        echo "Killing process on port $APP_PORT (PID: \$PID)"
+        echo "Killing APP on port $APP_PORT (PID: \$PID)"
         kill -9 \$PID
     fi
 
-    echo "=== Starting Application ==="
+    echo "=== Starting Application on port $APP_PORT ==="
     JAR_FILE=\$(ls $JAR_PATH | head -n 1)
 
-    nohup java -jar \$JAR_FILE > $LOG_FILE 2>&1 &
+    nohup java -jar \$JAR_FILE --server.port=$APP_PORT > $LOG_FILE 2>&1 &
 
-    echo "=== Application Started. Logs: $LOG_FILE ==="
+    echo "=== Waiting for app to boot ==="
+    sleep 5
 
-    echo "=== Restarting Nginx ==="
-    sudo systemctl restart nginx
+    echo "=== Health Check ==="
+    curl -f http://127.0.0.1:$APP_PORT || echo "Health check failed"
 
     echo "=== Deployment Finished on Server ==="
 EOF
