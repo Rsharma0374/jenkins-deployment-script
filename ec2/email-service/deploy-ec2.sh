@@ -28,12 +28,12 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
 
     echo "=== Cloning or Updating Repository ==="
     if [ -d "$REPO_NAME" ]; then
-        sudo -u jenkins git -C $REPO_NAME reset --hard
-        sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
-        sudo -u jenkins git -C $REPO_NAME pull origin $BRANCH
+        git -C $REPO_NAME reset --hard
+        git -C $REPO_NAME checkout $BRANCH
+        git -C $REPO_NAME pull origin $BRANCH
     else
-        sudo -u jenkins git clone git@github.com:Rsharma0374/emailConnecter-core.git
-        sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
+        git clone git@github.com:Rsharma0374/emailConnecter-core.git
+        git -C $REPO_NAME checkout $BRANCH
     fi
 
     cd $REPO_NAME
