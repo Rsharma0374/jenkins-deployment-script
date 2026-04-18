@@ -17,19 +17,19 @@ cd /var/lib/jenkins/repository/web
 
 echo "=== Cloning or updating repository ==="
 if [ -d "$REPO_NAME" ]; then
-    sudo -u jenkins git -C $REPO_NAME reset --hard
-    sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
-    sudo -u jenkins git -C $REPO_NAME pull origin $BRANCH
+    git -C $REPO_NAME reset --hard
+    git -C $REPO_NAME checkout $BRANCH
+    git -C $REPO_NAME pull origin $BRANCH
 else
-    sudo -u jenkins git clone git@github.com:Rsharma0374/rahul_portfolio_reactjs.git $REPO_NAME
-    sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
+    git clone git@github.com:Rsharma0374/rahul_portfolio_reactjs.git $REPO_NAME
+    git -C $REPO_NAME checkout $BRANCH
 fi
 
 echo "Install the dependencies"
-sudo -u jenkins npm install --prefix $REPO_NAME
+npm install --prefix $REPO_NAME
 
 echo "Build the project"
-sudo -u jenkins npm run build --prefix $REPO_NAME
+npm run build --prefix $REPO_NAME
 
 echo "Restart the nginx"
 sudo systemctl restart nginx
