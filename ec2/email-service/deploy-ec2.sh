@@ -32,7 +32,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
         sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
         sudo -u jenkins git -C $REPO_NAME pull origin $BRANCH
     else
-        sudo -u jenkins git clone git@github.com:Rsharma0374/emailConnecter-core.git $REPO_NAME
+        sudo -u jenkins git clone git@github.com:Rsharma0374/emailConnecter-core.git
         sudo -u jenkins git -C $REPO_NAME checkout $BRANCH
     fi
 
