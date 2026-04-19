@@ -11,7 +11,7 @@ REPO_NAME="API-Gateway"
 APP_NAME="API-Gateway"
 APP_PORT="10008"
 JAR_PATH="target/*.jar"
-LOG_DIR="/var/log/dAPI-Gateway"
+LOG_DIR="/var/log/API-Gateway"
 LOG_FILE="$LOG_DIR/API-Gateway.log"
 
 if [ -z "$PASSWORD" ] || [ -z "$BRANCH" ]; then
