@@ -39,7 +39,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP << EOF
     cd $REPO_NAME
 
     echo "=== Building Application with Maven ==="
-    mvn clean install -DskipTests
+    mvn clean install -Pprod -DskipTests
 
     echo "=== Preparing Log Directory ==="
     sudo mkdir -p $LOG_DIR
