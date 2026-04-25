@@ -6,7 +6,7 @@ echo "=== Starting Portfolio Web Service ==="
 PASSWORD=$1  # First argument passed to the script
 BRANCH=$2
 SERVER_IP="80.225.218.113"
-REPO_NAME="rahul_portfolio_reactjs"
+REPO_NAME="rahul-portfolio"
 
 # Run everything on the remote Kubernetes server
 sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP <<EOF
