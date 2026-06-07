@@ -10,7 +10,7 @@ SERVER_IP="152.67.3.253"
 REMOTE_USER="ubuntu"
 
 REPO_URL=""
-REPO_NAME="eureka-tailor"
+REPO_NAME="euruka-service-registry"
 
 APP_NAME="eureka-service"
 APP_PORT="8761"
