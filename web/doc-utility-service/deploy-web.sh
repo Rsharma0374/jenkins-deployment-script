@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -eu
 
 echo "=== Starting Document Utility Web Deployment (Build on Jenkins, Copy build to Server) ==="
 
