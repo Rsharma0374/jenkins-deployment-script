@@ -76,15 +76,19 @@ echo "=== Server: Swap folders + restart nginx ==="
 sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_IP}" <<EOF
   set -e
 
-  # Replace old with new
-  rm -rf "${REMOTE_WEB_DIR}.bak" || true
+  sudo rm -rf "${REMOTE_WEB_DIR}.bak" || true
   if [ -d "${REMOTE_WEB_DIR}" ]; then
-    mv "${REMOTE_WEB_DIR}" "${REMOTE_WEB_DIR}.bak"
+    sudo mv "${REMOTE_WEB_DIR}" "${REMOTE_WEB_DIR}.bak"
   fi
-  mv "${TMP_DIR}" "${REMOTE_WEB_DIR}"
+  sudo mv "${TMP_DIR}" "${REMOTE_WEB_DIR}"
+
+  # make sure nginx can read it (usually fine)
+  sudo chown -R www-data:www-data "${REMOTE_WEB_DIR}" 2>/dev/null || true
+  sudo chmod -R a+rX "${REMOTE_WEB_DIR}"
 
   sudo systemctl restart nginx
   echo "=== Deployment Completed Successfully ==="
+
 EOF
 
 echo "=== Deployment Completed Successfully ==="
