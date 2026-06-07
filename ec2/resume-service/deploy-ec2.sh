@@ -43,7 +43,7 @@ fi
 
 echo "=== Jenkins: Building JAR with Maven ==="
 cd "$LOCAL_REPO_DIR"
-mvn -B clean package -DskipTests
+mvn -B clean package -DskipTests -Pprod
 
 echo "=== Jenkins: Locating built JAR ==="
 JAR_FILE="$(ls -1 $LOCAL_JAR_GLOB | head -n 1)"
