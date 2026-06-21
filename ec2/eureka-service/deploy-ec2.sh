@@ -6,8 +6,8 @@ echo "=== Starting ${APP_NAME:-eureka-service} Deployment (Build on Jenkins, Run
 PASSWORD="${1:-}"
 BRANCH="${2:-}"
 
-SERVER_IP="152.67.3.253"
-REMOTE_USER="ubuntu"
+SERVER_IP="152.67.23.79"
+REMOTE_USER="opc"
 
 REPO_URL="git@github.com:Rsharma0374/euruka-service-registry.git"
 REPO_NAME="euruka-service-registry"

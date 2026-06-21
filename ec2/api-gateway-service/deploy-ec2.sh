@@ -6,8 +6,8 @@ echo "=== Starting API Gateway Service Deployment (Build on Jenkins, Run on Serv
 PASSWORD="${1:-}"
 BRANCH="${2:-}"
 
-SERVER_IP="152.67.3.253"
-REMOTE_USER="ubuntu"
+SERVER_IP="152.67.23.79"
+REMOTE_USER="opc"
 
 REPO_URL="git@github.com:Rsharma0374/API-Gateway.git"
 REPO_NAME="API-Gateway"
