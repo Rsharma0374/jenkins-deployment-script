@@ -85,7 +85,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_
   sleep 20
 
   echo "=== Health Check ==="
-  curl -f "http://127.0.0.1:${APP_PORT}/" || echo "Health check failed"
+  curl -f "http://127.0.0.1:${APP_PORT}/email-service/welcome" || echo "Health check failed"
 
   echo "=== Deployment Finished on Server ==="
 EOF
