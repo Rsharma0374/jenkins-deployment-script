@@ -82,13 +82,13 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_
   if [ -f "${REMOTE_JAR_PATH}.bak" ]; then rm -f "${REMOTE_JAR_PATH}.bak"; fi
   # (If you want a real backup, rename before scp instead.)
 
-  nohup java -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 &
+  nohup java -DHOSTNAME="$HOSTNAME" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 &
 
   echo "=== Waiting for app to boot ==="
   sleep 20
 
   echo "=== Health Check ==="
-  curl -f "http://127.0.0.1:${APP_PORT}/" || echo "Health check failed"
+  curl -f "http://127.0.0.1:${APP_PORT}/resume-service/api/v1/resume/welcome" || echo "Health check failed"
 
   echo "=== Deployment Finished on Server ==="
 EOF
