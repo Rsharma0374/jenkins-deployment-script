@@ -82,7 +82,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_
   if [ -f "${REMOTE_JAR_PATH}.bak" ]; then rm -f "${REMOTE_JAR_PATH}.bak"; fi
   # (If you want a real backup, rename before scp instead.)
 
-  nohup java -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 &
+  nohup java -jar "${REMOTE_JAR_PATH}" -DHOSTNAME="$HOSTNAME" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 &
 
   echo "=== Waiting for app to boot ==="
   sleep 20
