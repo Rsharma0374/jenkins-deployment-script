@@ -6,8 +6,8 @@ echo "=== Starting Email Connector Service Deployment (Build on Jenkins, Run on 
 PASSWORD="${1:-}"
 BRANCH="${2:-}"
 
-SERVER_IP="80.225.218.113"
-REMOTE_USER="ubuntu"
+SERVER_IP="140.238.230.44"
+REMOTE_USER="opc"
 
 REPO_URL="git@github.com:Rsharma0374/emailConnecter-core.git"
 REPO_NAME="emailConnecter-core"
