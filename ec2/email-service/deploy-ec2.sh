@@ -23,7 +23,7 @@ LOCAL_JAR_GLOB="${LOCAL_REPO_DIR}/target/*.jar"
 # Remote paths (JAR + logs in same folder)
 REMOTE_APP_DIR="/opt/${APP_NAME}"
 REMOTE_JAR_PATH="${REMOTE_APP_DIR}/${APP_NAME}.jar"
-REMOTE_LOG_FILE="${REMOTE_APP_DIR}/${APP_NAME}.log"
+REMOTE_LOG_FILE="${REMOTE_APP_DIR}/log/${APP_NAME}.log"
 
 if [ -z "$PASSWORD" ] || [ -z "$BRANCH" ]; then
   echo "Usage: $0 <server-password> <branch>"
