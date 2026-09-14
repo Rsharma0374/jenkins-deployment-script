@@ -98,5 +98,3 @@ EOF
 
 echo "=== Deployment Completed Successfully ==="
 
-here REMOTE_LOG_FILE="${REMOTE_APP_DIR}/log/${APP_NAME}.log" I added /log 
-update the script if folder not present then make one
