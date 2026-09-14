@@ -5,6 +5,7 @@ echo "=== Starting Email Connector Service Deployment (Build on Jenkins, Run on 
 
 PASSWORD="${1:-}"
 BRANCH="${2:-}"
+SCAN_VULNERABILITIES="${3:-}"
 
 SERVER_IP="140.238.230.44"
 REMOTE_USER="opc"
@@ -42,11 +43,17 @@ else
   git -C "$LOCAL_REPO_DIR" checkout "$BRANCH"
 fi
 
-echo "=== Scanning Repo for vulnerabilities ==="
+if [ "$SCAN_VULNERABILITIES" = "YES" ]; then
+    echo "=== Scanning Repo for vulnerabilities ==="
 
-/opt/trivy/trivy-scan.sh \
-    "$LOCAL_REPO_DIR" \
-    "email-connector-trivy-report"
+    /otp/trivy/trivy-scan.sh \
+        "$LOCAL_REPO_DIR" \
+        "email-connector-trivy-report"
+
+    echo "=== Vulnerability scan completed successfully ==="
+else
+    echo "=== Vulnerability scanning skipped ==="
+fi
 
 
 echo "=== Jenkins: Building JAR with Maven ==="
