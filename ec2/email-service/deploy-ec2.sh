@@ -43,6 +43,7 @@ else
   git -C "$LOCAL_REPO_DIR" checkout "$BRANCH"
 fi
 echo "=== Maven Dependency Resolution ==="
+cd "$LOCAL_REPO_DIR"
 mvn dependency:resolve
 
 if [ "$SCAN_VULNERABILITIES" = "YES" ]; then
