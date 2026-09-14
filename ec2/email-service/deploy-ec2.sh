@@ -41,6 +41,8 @@ else
   git clone "$REPO_URL" "$LOCAL_REPO_DIR"
   git -C "$LOCAL_REPO_DIR" checkout "$BRANCH"
 fi
+echo "=== Scanning Repo for vulnerabilities ==="
+trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format csv --output "${WORKDIR}/trivy-report.csv" "$LOCAL_REPO_DIR"
 
 echo "=== Jenkins: Building JAR with Maven ==="
 cd "$LOCAL_REPO_DIR"
