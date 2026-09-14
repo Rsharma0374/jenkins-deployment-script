@@ -1,4 +1,3 @@
-```bash
 #!/bin/bash
 set -euo pipefail
 
@@ -21,11 +20,10 @@ WORKDIR="${WORKSPACE:-$PWD}"
 LOCAL_REPO_DIR="${WORKDIR}/${REPO_NAME}"
 LOCAL_JAR_GLOB="${LOCAL_REPO_DIR}/target/*.jar"
 
-# Remote paths
+# Remote paths (JAR + logs in same folder)
 REMOTE_APP_DIR="/opt/${APP_NAME}"
-REMOTE_LOG_DIR="${REMOTE_APP_DIR}/log"
 REMOTE_JAR_PATH="${REMOTE_APP_DIR}/${APP_NAME}.jar"
-REMOTE_LOG_FILE="${REMOTE_LOG_DIR}/${APP_NAME}.log"
+REMOTE_LOG_FILE="${REMOTE_APP_DIR}/log/${APP_NAME}.log"
 
 if [ -z "$PASSWORD" ] || [ -z "$BRANCH" ]; then
   echo "Usage: $0 <server-password> <branch>"
@@ -33,7 +31,6 @@ if [ -z "$PASSWORD" ] || [ -z "$BRANCH" ]; then
 fi
 
 echo "=== Jenkins: Cloning/Updating repo in workspace ==="
-
 if [ -d "$LOCAL_REPO_DIR/.git" ]; then
   git -C "$LOCAL_REPO_DIR" fetch --all
   git -C "$LOCAL_REPO_DIR" reset --hard
@@ -45,103 +42,58 @@ else
 fi
 
 echo "=== Jenkins: Building JAR with Maven ==="
-
 cd "$LOCAL_REPO_DIR"
 mvn -B clean package -DskipTests -Pprod
 
 echo "=== Jenkins: Locating built JAR ==="
-
 JAR_FILE="$(ls -1 $LOCAL_JAR_GLOB | head -n 1)"
-
 if [ -z "${JAR_FILE:-}" ] || [ ! -f "$JAR_FILE" ]; then
   echo "ERROR: No JAR found at ${LOCAL_JAR_GLOB}"
   exit 1
 fi
-
 echo "Built JAR: $JAR_FILE"
 
-echo "=== Server: Creating application and log directories ==="
-
-sshpass -p "$PASSWORD" ssh \
-  -o StrictHostKeyChecking=no \
-  "${REMOTE_USER}@${SERVER_IP}" << EOF
-
+echo "=== Server: Creating ${REMOTE_APP_DIR} and setting permissions ==="
+sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_IP}" << EOF
   set -e
-
-  echo "Creating application directory: ${REMOTE_APP_DIR}"
   sudo mkdir -p "${REMOTE_APP_DIR}"
-
-  echo "Creating log directory: ${REMOTE_LOG_DIR}"
-  sudo mkdir -p "${REMOTE_LOG_DIR}"
-
-  echo "Setting ownership..."
   sudo chown -R ${REMOTE_USER}:${REMOTE_USER} "${REMOTE_APP_DIR}"
-
-  echo "Directories ready:"
-  ls -ld "${REMOTE_APP_DIR}"
-  ls -ld "${REMOTE_LOG_DIR}"
-
 EOF
 
 echo "=== Jenkins: Copying JAR to server (${REMOTE_JAR_PATH}) ==="
-
-sshpass -p "$PASSWORD" scp \
-  -o StrictHostKeyChecking=no \
-  "$JAR_FILE" \
-  "${REMOTE_USER}@${SERVER_IP}:${REMOTE_JAR_PATH}"
+sshpass -p "$PASSWORD" scp -o StrictHostKeyChecking=no "$JAR_FILE" "${REMOTE_USER}@${SERVER_IP}:${REMOTE_JAR_PATH}"
 
 echo "=== Server: Stopping old app and starting new one ==="
-
-sshpass -p "$PASSWORD" ssh \
-  -o StrictHostKeyChecking=no \
-  "${REMOTE_USER}@${SERVER_IP}" << EOF
-
+sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_IP}" << EOF
   set -e
-
   echo "=== Connected to Server (${SERVER_IP}) ==="
 
   echo "=== Stopping existing app on port ${APP_PORT} ==="
-
   PID=\$(lsof -t -i:${APP_PORT} || true)
-
   if [ -n "\$PID" ]; then
     echo "Killing PID \$PID"
     kill -9 "\$PID" || true
-  else
-    echo "No existing process found on port ${APP_PORT}"
   fi
 
-  echo "=== Ensuring log directory exists ==="
-
+  echo "=== Ensuring log directory exists ===" 
   mkdir -p "${REMOTE_LOG_DIR}"
 
   echo "=== Starting app from ${REMOTE_JAR_PATH} ==="
-
   cd "${REMOTE_APP_DIR}"
 
-  nohup java \
-    -DHOSTNAME="$HOSTNAME" \
-    -jar "${REMOTE_JAR_PATH}" \
-    --server.port=${APP_PORT} \
-    >> "${REMOTE_LOG_FILE}" 2>&1 &
-
-  echo "Application started with PID \$!"
+  # Log file lives in the same folder as the JAR
+  nohup java -DHOSTNAME="$HOSTNAME" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 &
 
   echo "=== Waiting for app to boot ==="
-
   sleep 20
 
   echo "=== Health Check ==="
-
-  curl -f "http://127.0.0.1:${APP_PORT}/email-service/welcome" \
-    || echo "Health check failed"
+  curl -f "http://127.0.0.1:${APP_PORT}/email-service/welcome" || echo "Health check failed"
 
   echo "=== Deployment Finished on Server ==="
-
-  echo "Application log:"
-  echo "${REMOTE_LOG_FILE}"
-
 EOF
 
 echo "=== Deployment Completed Successfully ==="
-```
+
+here REMOTE_LOG_FILE="${REMOTE_APP_DIR}/log/${APP_NAME}.log" I added /log 
+update the script if folder not present then make one
