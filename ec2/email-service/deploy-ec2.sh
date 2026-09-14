@@ -42,6 +42,8 @@ else
   git clone "$REPO_URL" "$LOCAL_REPO_DIR"
   git -C "$LOCAL_REPO_DIR" checkout "$BRANCH"
 fi
+echo "=== Maven Dependency Resolution ==="
+mvn dependency:resolve
 
 if [ "$SCAN_VULNERABILITIES" = "YES" ]; then
     echo "=== Scanning Repo for vulnerabilities ==="
