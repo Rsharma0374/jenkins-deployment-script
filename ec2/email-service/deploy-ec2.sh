@@ -46,7 +46,7 @@ fi
 if [ "$SCAN_VULNERABILITIES" = "YES" ]; then
     echo "=== Scanning Repo for vulnerabilities ==="
 
-    /otp/trivy/trivy-scan.sh \
+    /opt/trivy/trivy-scan.sh \
         "$LOCAL_REPO_DIR" \
         "email-connector-trivy-report"
 
