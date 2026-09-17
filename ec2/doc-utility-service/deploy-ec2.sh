@@ -5,8 +5,9 @@ echo "=== Starting Document Utility Service Deployment (Build on Jenkins, Run on
 
 PASSWORD="${1:-}"
 BRANCH="${2:-}"
+SCAN_VULNERABILITIES="${3:-}"
 
-SERVER_IP="80.225.218.113"
+SERVER_IP="140.238.245.110"
 REMOTE_USER="ubuntu"
 
 REPO_URL="git@github.com:Rsharma0374/document-utility-core.git"
@@ -23,7 +24,8 @@ LOCAL_JAR_GLOB="${LOCAL_REPO_DIR}/target/*.jar"
 # Remote paths (JAR + logs in same folder)
 REMOTE_APP_DIR="/opt/${APP_NAME}"
 REMOTE_JAR_PATH="${REMOTE_APP_DIR}/${APP_NAME}.jar"
-REMOTE_LOG_FILE="${REMOTE_APP_DIR}/${APP_NAME}.log"
+REMOTE_LOG_DIR="${REMOTE_APP_DIR}/log"
+REMOTE_LOG_FILE="${REMOTE_LOG_DIR}/${APP_NAME}.log"
 
 if [ -z "$PASSWORD" ] || [ -z "$BRANCH" ]; then
   echo "Usage: $0 <server-password> <branch>"
@@ -40,10 +42,26 @@ else
   git clone "$REPO_URL" "$LOCAL_REPO_DIR"
   git -C "$LOCAL_REPO_DIR" checkout "$BRANCH"
 fi
-
-echo "=== Jenkins: Building JAR with Maven (prod profile) ==="
+echo "=== Maven Dependency Resolution ==="
 cd "$LOCAL_REPO_DIR"
-mvn -B clean package -Pprod -DskipTests
+mvn dependency:resolve
+
+if [ "$SCAN_VULNERABILITIES" = "YES" ]; then
+    echo "=== Scanning Repo for vulnerabilities ==="
+
+    /opt/trivy/trivy-scan.sh \
+        "$LOCAL_REPO_DIR" \
+        "doc-utility-trivy-report"
+
+    echo "=== Vulnerability scan completed successfully ==="
+else
+    echo "=== Vulnerability scanning skipped ==="
+fi
+
+
+echo "=== Jenkins: Building JAR with Maven ==="
+cd "$LOCAL_REPO_DIR"
+mvn -B clean package -DskipTests -Pprod
 
 echo "=== Jenkins: Locating built JAR ==="
 JAR_FILE="$(ls -1 $LOCAL_JAR_GLOB | head -n 1)"
@@ -75,11 +93,14 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_
     kill -9 "\$PID" || true
   fi
 
+  echo "=== Ensuring log directory exists ===" 
+  mkdir -p "${REMOTE_LOG_DIR}"
+
   echo "=== Starting app from ${REMOTE_JAR_PATH} ==="
   cd "${REMOTE_APP_DIR}"
 
   # Log file lives in the same folder as the JAR
-  nohup java -DHOSTNAME="$HOSTNAME" -jar  "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 &
+  nohup java -DHOSTNAME="$HOSTNAME" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 &
 
   echo "=== Waiting for app to boot ==="
   sleep 20
