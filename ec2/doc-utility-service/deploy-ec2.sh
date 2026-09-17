@@ -100,7 +100,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_
   cd "${REMOTE_APP_DIR}"
 
   # Log file lives in the same folder as the JAR
-  nohup java -DHOSTNAME="$HOSTNAME" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 &
+  nohup java -DHOSTNAME="$HOSTNAME" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} 2>&1 &
 
   echo "=== Waiting for app to boot ==="
   sleep 20
