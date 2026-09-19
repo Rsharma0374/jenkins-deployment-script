@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "======================================================"
 echo "🚀 Starting Screening Room Node.js Deployment"
-echo "    Build on Jenkins, Run on Server with PM2"
+echo "    Build on Jenkins, Run on EC2 with PM2"
 echo "======================================================"
 
 # ======================================================
@@ -15,20 +15,23 @@ BRANCH="${2:-}"
 SCAN_VULNERABILITIES="${3:-NO}"
 
 if [ -z "$PASSWORD" ] || [ -z "$BRANCH" ]; then
-    echo "❌ Usage:"
-    echo "   $0 <server-password> <branch> [YES|NO]"
+    echo "❌ Missing required parameters"
+    echo ""
+    echo "Usage:"
+    echo "  $0 <server-password> <branch> [YES|NO]"
+    echo ""
     exit 1
 fi
 
 # ======================================================
-# Jenkins Node.js / NVM Configuration
+# Jenkins NVM / Node.js Configuration
 # ======================================================
 
 export NVM_DIR="/var/lib/jenkins/.nvm"
 
 echo ""
 echo "======================================================"
-echo "🔧 Loading Node.js / NVM"
+echo "🔧 Loading Node.js / NVM on Jenkins"
 echo "======================================================"
 
 if [ ! -s "$NVM_DIR/nvm.sh" ]; then
@@ -37,10 +40,10 @@ if [ ! -s "$NVM_DIR/nvm.sh" ]; then
     exit 1
 fi
 
-# Load NVM
 source "$NVM_DIR/nvm.sh"
 
-# Use Node.js 20
+echo "Using Node.js 20..."
+
 nvm use 20
 
 echo ""
@@ -55,42 +58,42 @@ echo "npm path     : $(command -v npm)"
 
 echo ""
 echo "======================================================"
-echo "🔍 Checking Jenkins tools"
+echo "🔍 Checking Jenkins Tools"
 echo "======================================================"
 
-command -v git >/dev/null 2>&1 || {
+if ! command -v git >/dev/null 2>&1; then
     echo "❌ git is not installed"
     exit 1
-}
+fi
 
-command -v node >/dev/null 2>&1 || {
+if ! command -v node >/dev/null 2>&1; then
     echo "❌ node is not available"
     exit 1
-}
+fi
 
-command -v npm >/dev/null 2>&1 || {
+if ! command -v npm >/dev/null 2>&1; then
     echo "❌ npm is not available"
     exit 1
-}
+fi
 
-command -v sshpass >/dev/null 2>&1 || {
+if ! command -v sshpass >/dev/null 2>&1; then
     echo "❌ sshpass is not installed"
     exit 1
-}
+fi
 
-command -v rsync >/dev/null 2>&1 || {
+if ! command -v rsync >/dev/null 2>&1; then
     echo "❌ rsync is not installed"
     exit 1
-}
+fi
 
 echo "✅ Git     : $(git --version)"
 echo "✅ Node.js : $(node --version)"
 echo "✅ npm     : $(npm --version)"
 echo "✅ sshpass : $(command -v sshpass)"
-echo "✅ rsync   : $(command -v rsync)"
+echo "✅ rsync   : $(rsync --version | head -n 1)"
 
 # ======================================================
-# Server Configuration
+# EC2 Server Configuration
 # ======================================================
 
 SERVER_IP="140.238.230.44"
@@ -103,19 +106,19 @@ REMOTE_USER="opc"
 REPO_URL="git@github.com:Rsharma0374/watch-together.git"
 REPO_NAME="watch-together"
 
-# Node application inside repository
+# Node.js project inside repository
 APP_SOURCE_DIR="screening-room-backend"
 
 # ======================================================
-# Node Application Configuration
+# Application Configuration
 # ======================================================
 
 APP_NAME="screening-room-backend"
 
 # IMPORTANT:
-# Change this if your Node entry file has another name.
+# Change this if your actual Node.js entry file is different.
 #
-# Example:
+# Examples:
 # NODE_ENTRY="index.js"
 # NODE_ENTRY="app.js"
 # NODE_ENTRY="server.js"
@@ -134,12 +137,25 @@ LOCAL_REPO_DIR="${WORKDIR}/${REPO_NAME}"
 LOCAL_APP_DIR="${LOCAL_REPO_DIR}/${APP_SOURCE_DIR}"
 
 # ======================================================
-# Remote Application Paths
+# Remote Application Configuration
 # ======================================================
 
 REMOTE_APP_DIR="/opt/${APP_NAME}"
+
 REMOTE_LOG_DIR="${REMOTE_APP_DIR}/log"
+
 REMOTE_LOG_FILE="${REMOTE_LOG_DIR}/${APP_NAME}.log"
+
+# ======================================================
+# SSH Configuration
+# ======================================================
+
+SSH_OPTIONS="\
+-o StrictHostKeyChecking=no \
+-o UserKnownHostsFile=/dev/null \
+-o PreferredAuthentications=password \
+-o PubkeyAuthentication=no \
+-o ConnectTimeout=15"
 
 # ======================================================
 # Deployment Information
@@ -149,18 +165,19 @@ echo ""
 echo "======================================================"
 echo "📋 Deployment Configuration"
 echo "======================================================"
-echo "Project              : Screening Room Backend"
-echo "Repository           : ${REPO_URL}"
-echo "Branch               : ${BRANCH}"
-echo "Local repository     : ${LOCAL_REPO_DIR}"
-echo "Local application    : ${LOCAL_APP_DIR}"
-echo "Remote server        : ${SERVER_IP}"
-echo "Remote user          : ${REMOTE_USER}"
-echo "Remote application   : ${REMOTE_APP_DIR}"
-echo "Application name     : ${APP_NAME}"
-echo "Node entry           : ${NODE_ENTRY}"
-echo "Application port     : ${APP_PORT}"
-echo "Vulnerability scan   : ${SCAN_VULNERABILITIES}"
+
+echo "Repository          : ${REPO_URL}"
+echo "Branch              : ${BRANCH}"
+echo "Local repository    : ${LOCAL_REPO_DIR}"
+echo "Local application   : ${LOCAL_APP_DIR}"
+echo "Remote server       : ${SERVER_IP}"
+echo "Remote user         : ${REMOTE_USER}"
+echo "Remote application  : ${REMOTE_APP_DIR}"
+echo "Application name    : ${APP_NAME}"
+echo "Node entry          : ${NODE_ENTRY}"
+echo "Application port    : ${APP_PORT}"
+echo "Vulnerability scan  : ${SCAN_VULNERABILITIES}"
+
 echo "======================================================"
 
 # ======================================================
@@ -178,7 +195,7 @@ if [ -d "${LOCAL_REPO_DIR}/.git" ]; then
 
     cd "$LOCAL_REPO_DIR"
 
-    echo "📡 Fetching latest branches..."
+    echo "📡 Fetching latest changes..."
 
     git fetch --all --prune
 
@@ -190,7 +207,7 @@ if [ -d "${LOCAL_REPO_DIR}/.git" ]; then
 
     git reset --hard "origin/${BRANCH}"
 
-    echo "🧹 Removing untracked files"
+    echo "🧹 Cleaning untracked files"
 
     git clean -fd
 
@@ -212,10 +229,12 @@ fi
 echo ""
 echo "✅ Repository ready"
 
-echo "Current Git branch:"
+echo "Current branch:"
 git branch --show-current
 
-echo "Current Git commit:"
+echo ""
+
+echo "Current commit:"
 git rev-parse --short HEAD
 
 # ======================================================
@@ -253,14 +272,18 @@ ls -la
 # ======================================================
 
 if [ ! -f "package.json" ]; then
-    echo "❌ package.json not found"
+
+    echo "❌ package.json not found:"
+    echo "$LOCAL_APP_DIR/package.json"
+
     exit 1
+
 fi
 
 echo "✅ package.json found"
 
 # ======================================================
-# Validate Node Entry File
+# Validate Node.js Entry File
 # ======================================================
 
 if [ ! -f "$NODE_ENTRY" ]; then
@@ -269,17 +292,18 @@ if [ ! -f "$NODE_ENTRY" ]; then
     echo "$LOCAL_APP_DIR/$NODE_ENTRY"
 
     echo ""
-    echo "Files available:"
+    echo "Available files:"
+
     ls -la
 
     echo ""
-    echo "If your entry file is not server.js,"
-    echo "change NODE_ENTRY in this script."
+    echo "Please update:"
+    echo "NODE_ENTRY=\"server.js\""
 
     exit 1
 fi
 
-echo "✅ Node entry file found:"
+echo "✅ Node.js entry file found:"
 echo "$NODE_ENTRY"
 
 # ======================================================
@@ -294,19 +318,24 @@ echo "======================================================"
 if [ -f "package-lock.json" ]; then
 
     echo "📦 package-lock.json found"
-    echo "Running npm ci..."
+
+    echo "Running:"
+    echo "npm ci"
 
     npm ci
 
 else
 
     echo "⚠️ package-lock.json not found"
-    echo "Running npm install..."
+
+    echo "Running:"
+    echo "npm install"
 
     npm install
 
 fi
 
+echo ""
 echo "✅ Jenkins dependencies installed"
 
 # ======================================================
@@ -320,17 +349,7 @@ echo "======================================================"
 
 if [ "$SCAN_VULNERABILITIES" = "YES" ]; then
 
-    if [ -x "/opt/trivy/trivy-scan.sh" ]; then
-
-        echo "🔍 Running Trivy scan..."
-
-        /opt/trivy/trivy-scan.sh \
-            "$LOCAL_APP_DIR" \
-            "${APP_NAME}-trivy-report"
-
-        echo "✅ Vulnerability scan completed"
-
-    else
+    if [ ! -x "/opt/trivy/trivy-scan.sh" ]; then
 
         echo "❌ Trivy script not found:"
         echo "/opt/trivy/trivy-scan.sh"
@@ -339,6 +358,14 @@ if [ "$SCAN_VULNERABILITIES" = "YES" ]; then
 
     fi
 
+    echo "🔍 Running Trivy scan..."
+
+    /opt/trivy/trivy-scan.sh \
+        "$LOCAL_APP_DIR" \
+        "${APP_NAME}-trivy-report"
+
+    echo "✅ Vulnerability scan completed"
+
 else
 
     echo "⏭️ Vulnerability scanning skipped"
@@ -346,17 +373,30 @@ else
 fi
 
 # ======================================================
+# Test SSH Connection
+# ======================================================
+
+echo ""
+echo "======================================================"
+echo "🔐 Testing EC2 SSH Connection"
+echo "======================================================"
+
+sshpass -p "$PASSWORD" ssh \
+    $SSH_OPTIONS \
+    "${REMOTE_USER}@${SERVER_IP}" \
+    "echo '✅ SSH connection successful'"
+
+# ======================================================
 # Prepare Remote Server
 # ======================================================
 
 echo ""
 echo "======================================================"
-echo "🖥️ Preparing Remote EC2 Server"
+echo "🖥️ Preparing EC2 Server"
 echo "======================================================"
 
 sshpass -p "$PASSWORD" ssh \
-    -o StrictHostKeyChecking=no \
-    -o ConnectTimeout=15 \
+    $SSH_OPTIONS \
     "${REMOTE_USER}@${SERVER_IP}" << EOF
 
 set -e
@@ -365,19 +405,30 @@ echo "=============================================="
 echo "Connected to ${SERVER_IP}"
 echo "=============================================="
 
+echo ""
 echo "Creating application directory..."
 
 sudo mkdir -p "${REMOTE_APP_DIR}"
+
 sudo mkdir -p "${REMOTE_LOG_DIR}"
 
 sudo chown -R "${REMOTE_USER}:${REMOTE_USER}" "${REMOTE_APP_DIR}"
 
-echo "✅ Application directories ready"
+echo ""
+echo "Application directory:"
+ls -ld "${REMOTE_APP_DIR}"
+
+echo ""
+echo "Log directory:"
+ls -ld "${REMOTE_LOG_DIR}"
+
+echo ""
+echo "✅ Remote directories ready"
 
 EOF
 
 # ======================================================
-# Copy Application to Server
+# Copy Application to EC2
 # ======================================================
 
 echo ""
@@ -385,46 +436,91 @@ echo "======================================================"
 echo "📤 Copying Application to EC2"
 echo "======================================================"
 
-rsync \
+echo "Source:"
+echo "${LOCAL_APP_DIR}/"
+
+echo "Destination:"
+echo "${REMOTE_USER}@${SERVER_IP}:${REMOTE_APP_DIR}/"
+
+echo ""
+
+sshpass -p "$PASSWORD" rsync \
     -az \
     --delete \
     --exclude=".git" \
     --exclude="node_modules" \
     --exclude=".env" \
     --exclude="log" \
-    -e "ssh -o StrictHostKeyChecking=no" \
+    -e "ssh ${SSH_OPTIONS}" \
     "${LOCAL_APP_DIR}/" \
-    "${REMOTE_USER}@${SERVER_IP}:${REMOTE_APP_DIR}/" \
-    2>&1
+    "${REMOTE_USER}@${SERVER_IP}:${REMOTE_APP_DIR}/"
 
-echo "✅ Application source copied"
+echo ""
+echo "✅ Application copied successfully"
 
 # ======================================================
-# Remote Node.js / NVM / npm / PM2 Setup
+# Verify Files on EC2
 # ======================================================
 
 echo ""
 echo "======================================================"
-echo "🔧 Configuring Node.js Environment on EC2"
+echo "🔎 Verifying Application on EC2"
 echo "======================================================"
 
 sshpass -p "$PASSWORD" ssh \
-    -o StrictHostKeyChecking=no \
-    -o ConnectTimeout=15 \
+    $SSH_OPTIONS \
     "${REMOTE_USER}@${SERVER_IP}" << EOF
 
 set -e
 
-echo "=============================================="
-echo "🔧 Remote Node.js Environment"
-echo "=============================================="
+cd "${REMOTE_APP_DIR}"
+
+echo "Application directory:"
+pwd
+
+echo ""
+echo "Application files:"
+ls -la
+
+if [ ! -f "package.json" ]; then
+    echo "❌ package.json missing on EC2"
+    exit 1
+fi
+
+if [ ! -f "${NODE_ENTRY}" ]; then
+    echo "❌ ${NODE_ENTRY} missing on EC2"
+    exit 1
+fi
+
+echo ""
+echo "✅ Application files verified"
+
+EOF
+
+# ======================================================
+# Load NVM on EC2
+# ======================================================
+
+echo ""
+echo "======================================================"
+echo "🔧 Configuring Node.js on EC2"
+echo "======================================================"
+
+sshpass -p "$PASSWORD" ssh \
+    $SSH_OPTIONS \
+    "${REMOTE_USER}@${SERVER_IP}" << EOF
+
+set -e
 
 export NVM_DIR="\$HOME/.nvm"
 
 if [ ! -s "\$NVM_DIR/nvm.sh" ]; then
 
-    echo "❌ NVM not found on remote server:"
+    echo "❌ NVM not found on EC2:"
     echo "\$NVM_DIR/nvm.sh"
+
+    echo ""
+    echo "Please install NVM for user ${REMOTE_USER}."
 
     exit 1
 
@@ -444,19 +540,22 @@ echo ""
 echo "Node version:"
 node --version
 
+echo ""
 echo "npm version:"
 npm --version
 
+echo ""
 echo "Node path:"
 command -v node
 
+echo ""
 echo "npm path:"
 command -v npm
 
 EOF
 
 # ======================================================
-# Install Production Dependencies on Server
+# Install Production Dependencies on EC2
 # ======================================================
 
 echo ""
@@ -465,8 +564,7 @@ echo "📦 Installing Production Dependencies on EC2"
 echo "======================================================"
 
 sshpass -p "$PASSWORD" ssh \
-    -o StrictHostKeyChecking=no \
-    -o ConnectTimeout=15 \
+    $SSH_OPTIONS \
     "${REMOTE_USER}@${SERVER_IP}" << EOF
 
 set -e
@@ -483,16 +581,23 @@ echo "Current directory:"
 pwd
 
 echo ""
-echo "Installing production dependencies..."
 
-if [ -f package-lock.json ]; then
+if [ -f "package-lock.json" ]; then
 
-    echo "package-lock.json found"
+    echo "📦 package-lock.json found"
+
+    echo "Running:"
+    echo "npm ci --omit=dev"
+
     npm ci --omit=dev
 
 else
 
-    echo "package-lock.json not found"
+    echo "⚠️ package-lock.json not found"
+
+    echo "Running:"
+    echo "npm install --omit=dev"
+
     npm install --omit=dev
 
 fi
@@ -508,12 +613,11 @@ EOF
 
 echo ""
 echo "======================================================"
-echo "🚀 Deploying Application with PM2"
+echo "🚀 Starting Application with PM2"
 echo "======================================================"
 
 sshpass -p "$PASSWORD" ssh \
-    -o StrictHostKeyChecking=no \
-    -o ConnectTimeout=15 \
+    $SSH_OPTIONS \
     "${REMOTE_USER}@${SERVER_IP}" << EOF
 
 set -e
@@ -532,10 +636,9 @@ echo "=============================================="
 
 if ! command -v pm2 >/dev/null 2>&1; then
 
-    echo "❌ PM2 is not installed"
+    echo "⚠️ PM2 not installed"
 
-    echo ""
-    echo "Installing PM2..."
+    echo "Installing PM2 globally..."
 
     npm install -g pm2
 
@@ -584,19 +687,22 @@ pm2 start "${NODE_ENTRY}" \
     --output "${REMOTE_LOG_FILE}" \
     --error "${REMOTE_LOG_FILE}"
 
+echo ""
+echo "✅ Application started"
+
 # --------------------------------------------------
-# Save PM2 process
+# PM2 save
 # --------------------------------------------------
 
 echo ""
 echo "=============================================="
-echo "Saving PM2 Process"
+echo "Saving PM2 Process List"
 echo "=============================================="
 
 pm2 save
 
 # --------------------------------------------------
-# Show PM2 status
+# PM2 status
 # --------------------------------------------------
 
 echo ""
@@ -618,8 +724,7 @@ echo "⚙️ Configuring PM2 Startup"
 echo "======================================================"
 
 sshpass -p "$PASSWORD" ssh \
-    -o StrictHostKeyChecking=no \
-    -o ConnectTimeout=15 \
+    $SSH_OPTIONS \
     "${REMOTE_USER}@${SERVER_IP}" << EOF
 
 set -e
@@ -631,10 +736,9 @@ source "\$NVM_DIR/nvm.sh"
 nvm use 20
 
 echo "=============================================="
-echo "Configuring PM2 system startup"
+echo "Configuring PM2 systemd startup"
 echo "=============================================="
 
-# Generate PM2 startup configuration
 sudo env PATH="\$PATH" pm2 startup systemd \
     -u "${REMOTE_USER}" \
     --hp "/home/${REMOTE_USER}" \
@@ -644,7 +748,6 @@ echo ""
 echo "PM2 startup output:"
 cat /tmp/pm2-startup.txt
 
-# Extract and execute the generated sudo command
 STARTUP_COMMAND=\$(grep -E '^sudo ' /tmp/pm2-startup.txt | tail -n 1 || true)
 
 if [ -n "\$STARTUP_COMMAND" ]; then
@@ -657,11 +760,13 @@ if [ -n "\$STARTUP_COMMAND" ]; then
 else
 
     echo ""
-    echo "ℹ️ PM2 startup command already configured or not required"
+    echo "ℹ️ PM2 startup already configured or no command generated"
 
 fi
 
-# Save current process list
+echo ""
+echo "Saving PM2 process list..."
+
 pm2 save
 
 echo ""
@@ -675,7 +780,7 @@ EOF
 
 echo ""
 echo "======================================================"
-echo "⏳ Waiting for Application"
+echo "⏳ Waiting for Application Startup"
 echo "======================================================"
 
 sleep 10
@@ -690,8 +795,7 @@ echo "🏥 Application Health Check"
 echo "======================================================"
 
 sshpass -p "$PASSWORD" ssh \
-    -o StrictHostKeyChecking=no \
-    -o ConnectTimeout=15 \
+    $SSH_OPTIONS \
     "${REMOTE_USER}@${SERVER_IP}" << EOF
 
 set -e
@@ -726,24 +830,36 @@ else
     echo "PM2 Logs"
     echo "=============================================="
 
-    pm2 logs "${APP_NAME}" --lines 100 --nostream || true
+    pm2 logs "${APP_NAME}" \
+        --lines 100 \
+        --nostream || true
 
     exit 1
 
 fi
+
+# ==================================================
+# HTTP Health Check
+# ==================================================
 
 echo ""
 echo "=============================================="
 echo "HTTP Health Check"
 echo "=============================================="
 
+HEALTH_URL="http://127.0.0.1:${APP_PORT}/api/health"
+
+echo "Checking:"
+echo "\$HEALTH_URL"
+
 if curl \
     --fail \
     --silent \
     --show-error \
     --max-time 10 \
-    "http://127.0.0.1:${APP_PORT}/api/health"; then
+    "\$HEALTH_URL"; then
 
+    echo ""
     echo ""
     echo "✅ Application health check successful"
 
@@ -757,7 +873,9 @@ else
     echo "PM2 Logs"
     echo "=============================================="
 
-    pm2 logs "${APP_NAME}" --lines 100 --nostream || true
+    pm2 logs "${APP_NAME}" \
+        --lines 100 \
+        --nostream || true
 
     exit 1
 
@@ -766,13 +884,14 @@ fi
 EOF
 
 # ======================================================
-# Deployment Complete
+# Final Deployment Status
 # ======================================================
 
 echo ""
 echo "======================================================"
 echo "✅ DEPLOYMENT SUCCESSFUL"
 echo "======================================================"
+
 echo ""
 echo "Application : ${APP_NAME}"
 echo "Server      : ${SERVER_IP}"
@@ -780,12 +899,17 @@ echo "User        : ${REMOTE_USER}"
 echo "Branch      : ${BRANCH}"
 echo "Port        : ${APP_PORT}"
 echo "PM2 Name    : ${APP_NAME}"
-echo "Entry       : ${NODE_ENTRY}"
+echo "Node Entry  : ${NODE_ENTRY}"
+
 echo ""
 echo "Health URL:"
 echo "http://${SERVER_IP}:${APP_PORT}/api/health"
+
 echo ""
-echo "Remote logs:"
+echo "Remote Log:"
 echo "${REMOTE_LOG_FILE}"
+
 echo ""
+echo "======================================================"
+echo "🎉 Screening Room deployment completed"
 echo "======================================================"
