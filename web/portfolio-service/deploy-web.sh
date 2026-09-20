@@ -6,7 +6,7 @@ echo "=== Starting Portfolio Web Deployment (Build on Jenkins, Copy build to Ser
 PASSWORD="${1:-}"
 BRANCH="${2:-}"
 
-SERVER_IP="80.225.218.113"
+SERVER_IP="130.210.44.155"
 REMOTE_USER="ubuntu"
 
 REPO_URL="git@github.com:Rsharma0374/rahul-portfolio.git"

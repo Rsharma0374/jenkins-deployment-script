@@ -6,7 +6,7 @@ echo "=== Starting Password Manager Web Deployment (Build on Jenkins, Copy build
 PASSWORD="${1:-}"
 BRANCH="${2:-}"
 
-SERVER_IP="80.225.218.113"
+SERVER_IP="130.210.44.155"
 REMOTE_USER="ubuntu"
 
 REPO_URL="git@github.com:Rsharma0374/password-manager-web.git"

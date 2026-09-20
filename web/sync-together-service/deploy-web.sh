@@ -42,8 +42,8 @@ APP_NAME="screening-room-frontend-react"
 # EC2 Server Configuration
 # ======================================================
 
-SERVER_IP="140.238.244.128"
-REMOTE_USER="opc"
+SERVER_IP="130.210.44.155"
+REMOTE_USER="ubuntu"
 
 REMOTE_WEB_DIR="/opt/web/${APP_NAME}"
 TMP_DIR="${REMOTE_WEB_DIR}.new"
