@@ -125,7 +125,7 @@ APP_NAME="screening-room-backend"
 
 NODE_ENTRY="server.js"
 
-APP_PORT="8001"
+APP_PORT="3001"
 
 # ======================================================
 # Jenkins Workspace
