@@ -926,7 +926,7 @@ echo "=============================================="
 echo "HTTP Health Check"
 echo "=============================================="
 
-HEALTH_URL="http://127.0.0.1:${APP_PORT}/api/health"
+HEALTH_URL="http://127.0.0.1:${APP_PORT}/screening-service/api/health"
 
 echo "Checking:"
 echo "\$HEALTH_URL"
@@ -988,7 +988,7 @@ echo "Node Entry  : ${NODE_ENTRY}"
 
 echo ""
 echo "Health URL:"
-echo "http://${SERVER_IP}:${APP_PORT}/api/health"
+echo "http://${SERVER_IP}:${APP_PORT}/screening-service/api/health"
 
 echo ""
 echo "Remote Log:"
