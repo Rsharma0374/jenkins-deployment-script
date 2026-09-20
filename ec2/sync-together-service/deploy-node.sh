@@ -996,5 +996,5 @@ echo "${REMOTE_LOG_FILE}"
 
 echo ""
 echo "======================================================"
-echo "🎉 Screening Room deployment completed"
+echo "🎉 Watch Together deployment completed"
 echo "======================================================"
