@@ -1,12 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "=== Starting ${APP_NAME:-auth-service} Deployment (Build on Jenkins, Run on Server) ==="
+echo "=== Starting Auth Service Deployment (Build on Jenkins, Run on Server) ==="
 
 PASSWORD="${1:-}"
 BRANCH="${2:-}"
+SCAN_VULNERABILITIES="${3:-}"
 
-SERVER_IP="80.225.218.113"
+SERVER_IP="140.238.245.110"
 REMOTE_USER="ubuntu"
 
 REPO_URL="git@github.com:Rsharma0374/userAuthentication.git"
@@ -20,10 +21,11 @@ WORKDIR="${WORKSPACE:-$PWD}"
 LOCAL_REPO_DIR="${WORKDIR}/${REPO_NAME}"
 LOCAL_JAR_GLOB="${LOCAL_REPO_DIR}/target/*.jar"
 
-# Remote paths
+# Remote paths (JAR + logs in same folder)
 REMOTE_APP_DIR="/opt/${APP_NAME}"
 REMOTE_JAR_PATH="${REMOTE_APP_DIR}/${APP_NAME}.jar"
-REMOTE_LOG_FILE="${REMOTE_APP_DIR}/${APP_NAME}.log"
+REMOTE_LOG_DIR="${REMOTE_APP_DIR}/log"
+REMOTE_LOG_FILE="${REMOTE_LOG_DIR}/${APP_NAME}.log"
 
 if [ -z "$PASSWORD" ] || [ -z "$BRANCH" ]; then
   echo "Usage: $0 <server-password> <branch>"
@@ -40,6 +42,22 @@ else
   git clone "$REPO_URL" "$LOCAL_REPO_DIR"
   git -C "$LOCAL_REPO_DIR" checkout "$BRANCH"
 fi
+echo "=== Maven Dependency Resolution ==="
+cd "$LOCAL_REPO_DIR"
+mvn dependency:resolve
+
+if [ "$SCAN_VULNERABILITIES" = "YES" ]; then
+    echo "=== Scanning Repo for vulnerabilities ==="
+
+    /opt/trivy/trivy-scan.sh \
+        "$LOCAL_REPO_DIR" \
+        "auth-service-trivy-report"
+
+    echo "=== Vulnerability scan completed successfully ==="
+else
+    echo "=== Vulnerability scanning skipped ==="
+fi
+
 
 echo "=== Jenkins: Building JAR with Maven ==="
 cd "$LOCAL_REPO_DIR"
@@ -53,14 +71,14 @@ if [ -z "${JAR_FILE:-}" ] || [ ! -f "$JAR_FILE" ]; then
 fi
 echo "Built JAR: $JAR_FILE"
 
-echo "=== Server: Creating /opt/${APP_NAME} and setting permissions ==="
+echo "=== Server: Creating ${REMOTE_APP_DIR} and setting permissions ==="
 sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_IP}" << EOF
   set -e
   sudo mkdir -p "${REMOTE_APP_DIR}"
   sudo chown -R ${REMOTE_USER}:${REMOTE_USER} "${REMOTE_APP_DIR}"
 EOF
 
-echo "=== Jenkins: Copying JAR to server (/opt/${APP_NAME}/${APP_NAME}.jar) ==="
+echo "=== Jenkins: Copying JAR to server (${REMOTE_JAR_PATH}) ==="
 sshpass -p "$PASSWORD" scp -o StrictHostKeyChecking=no "$JAR_FILE" "${REMOTE_USER}@${SERVER_IP}:${REMOTE_JAR_PATH}"
 
 echo "=== Server: Stopping old app and starting new one ==="
@@ -75,22 +93,23 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_
     kill -9 "\$PID" || true
   fi
 
+  echo "=== Ensuring log directory exists ===" 
+  mkdir -p "${REMOTE_LOG_DIR}"
+
   echo "=== Starting app from ${REMOTE_JAR_PATH} ==="
   cd "${REMOTE_APP_DIR}"
 
-  # Optional: keep a simple backup of previous JAR
-  if [ -f "${REMOTE_JAR_PATH}.bak" ]; then rm -f "${REMOTE_JAR_PATH}.bak"; fi
-  # (If you want a real backup, rename before scp instead.)
-
-  nohup java  -DHOSTNAME="${SERVER_IP}" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 &
+  # Log file lives in the same folder as the JAR
+  nohup java -DHOSTNAME="$HOSTNAME" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 < /dev/null &
 
   echo "=== Waiting for app to boot ==="
   sleep 20
 
   echo "=== Health Check ==="
-  curl -f "http://127.0.0.1:${APP_PORT}/" || echo "Health check failed"
+  curl -f "http://127.0.0.1:${APP_PORT}/auth-service/welcome" || echo "Health check failed"
 
   echo "=== Deployment Finished on Server ==="
 EOF
 
 echo "=== Deployment Completed Successfully ==="
+
