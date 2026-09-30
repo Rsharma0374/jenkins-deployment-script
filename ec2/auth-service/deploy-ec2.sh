@@ -86,6 +86,9 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_
   set -e
   echo "=== Connected to Server (${SERVER_IP}) ==="
 
+  echo "=== Stopping service ==="
+  sudo systemctl stop ${APP_NAME} || true
+
   echo "=== Stopping existing app on port ${APP_PORT} ==="
   PID=\$(lsof -t -i:${APP_PORT} || true)
   if [ -n "\$PID" ]; then
@@ -99,8 +102,12 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_
   echo "=== Starting app from ${REMOTE_JAR_PATH} ==="
   cd "${REMOTE_APP_DIR}"
 
+  echo "=== Starting service ==="
+  sudo systemctl reset-failed ${APP_NAME} || true
+  sudo systemctl start ${APP_NAME}
+
   # Log file lives in the same folder as the JAR
-  nohup java -DHOSTNAME="$HOSTNAME" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 < /dev/null &
+  #nohup java -DHOSTNAME="$HOSTNAME" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 < /dev/null &
 
   echo "=== Waiting for app to boot ==="
   sleep 20
