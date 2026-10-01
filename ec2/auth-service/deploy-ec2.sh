@@ -110,7 +110,7 @@ sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "${REMOTE_USER}@${SERVER_
   #nohup java -DHOSTNAME="$HOSTNAME" -jar "${REMOTE_JAR_PATH}" --server.port=${APP_PORT} >> "${REMOTE_LOG_FILE}" 2>&1 < /dev/null &
 
   echo "=== Waiting for app to boot ==="
-  sleep 20
+  sleep 60
 
   echo "=== Health Check ==="
   curl -f "http://127.0.0.1:${APP_PORT}/auth-service/welcome" || echo "Health check failed"
